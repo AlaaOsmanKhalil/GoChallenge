@@ -14,7 +14,7 @@ type HttpServer struct {
 	Router *chi.Mux
 }
 
-func NewHttpServer(logger *zap.SugaredLogger, serverConf config.ServerConfigurations) *HttpServer {
+func NewHttpServer(logger *zap.SugaredLogger, serverConf config.ServerConfigurations) *HttpServer { //
 	router := chi.NewRouter()
 
 	return &HttpServer{
@@ -25,6 +25,7 @@ func NewHttpServer(logger *zap.SugaredLogger, serverConf config.ServerConfigurat
 }
 func (r *HttpServer) Start() {
 	listeningAddr := ":" + strconv.Itoa(r.sc.Port)
+	//listeningAddr := ":8000"
 
 	r.Logger.Infof("Server listening on port %s", listeningAddr)
 

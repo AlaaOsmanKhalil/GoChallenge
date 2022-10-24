@@ -1,33 +1,33 @@
 package api
 
 import (
+	"TransactionAPI/internal/adapters/stream"
+	"TransactionAPI/internal/repositories/transaction"
 	"TransactionAPI/internal/services/transactionsvc"
 	"encoding/json"
-	"fmt"
-	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/dranikpg/dto-mapper"
 	"github.com/go-chi/chi"
 	"github.com/go-playground/validator/v10"
 	"go.uber.org/zap"
-	"log"
 	"net/http"
 )
 
 type TransactionController struct {
-	log      *zap.SugaredLogger
-	validate *validator.Validate
-	//transactionSvc transactionsvc.IService
+	log            *zap.SugaredLogger
+	validate       *validator.Validate
+	transactionSvc transactionsvc.IService
 }
 
-func NewTransactionController(server *HttpServer, validator *validator.Validate) {
+func NewTransactionController(server *HttpServer, validator *validator.Validate, ts transactionsvc.IService) {
 	c := &TransactionController{
-		log:      server.Logger,
-		validate: validator,
-		//transactionSvc: ts,
+		log:            server.Logger,
+		validate:       validator,
+		transactionSvc: ts,
 	}
 
 	server.Router.Group(func(r chi.Router) {
 		r.Post("/transactions", c.handleCreateTransaction)
-		//r.Get("/transactions", c.handleGetAllTransactions)
+		r.Get("/transactions", c.handleGetAllTransactions)
 	})
 }
 
@@ -46,13 +46,13 @@ func (c *TransactionController) handleCreateTransaction(writer http.ResponseWrit
 		return
 	}
 
-	js, er := json.Marshal(payload)
+	/*js, er := json.Marshal(payload)
 
 	if er != nil {
 		log.Fatal("encode error:", er)
 	}
-
-	p, err := kafka.NewProducer(&kafka.ConfigMap{"bootstrap.servers": "localhost"})
+	*/
+	/*p, err := kafka.NewProducer(&kafka.ConfigMap{"bootstrap.servers": "localhost"})
 	if err != nil {
 		panic(err)
 	}
@@ -83,11 +83,15 @@ func (c *TransactionController) handleCreateTransaction(writer http.ResponseWrit
 
 	// Wait for message deliveries before shutting down
 	p.Flush(15 * 1000)
+	*/
+	var model transaction.Model
+	dto.Map(&model, payload)
+	stream.Produce(model)
 
 	RenderJSON(req.Context(), writer, http.StatusCreated, payload)
 }
 
-/*func (c *TransactionController) handleGetAllTransactions(writer http.ResponseWriter, req *http.Request) {
+func (c *TransactionController) handleGetAllTransactions(writer http.ResponseWriter, req *http.Request) {
 	res, err := c.transactionSvc.GetAll(req.Context())
 
 	if err != nil {
@@ -96,4 +100,3 @@ func (c *TransactionController) handleCreateTransaction(writer http.ResponseWrit
 
 	RenderJSON(req.Context(), writer, http.StatusOK, res)
 }
-*/
